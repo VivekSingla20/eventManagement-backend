@@ -12,8 +12,14 @@ module.exports = {
       capacity: Sequelize.INTEGER,
       location: Sequelize.STRING,
       created_by: {
-        type: Sequelize.INTEGER,
-        references: { model: "Users", key: "user_id" },
+        type: Sequelize.UUID, // Matches User's id type
+        allowNull: false,
+        references: {
+          model: "users", // Matches table name
+          key: "id", // Matches primary key in User.js
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       createdAt: Sequelize.DATE,
       updatedAt: Sequelize.DATE,

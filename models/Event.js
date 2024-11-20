@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
     event_date: DataTypes.DATE,
     capacity: DataTypes.INTEGER,
     location: DataTypes.STRING,
+    created_by: {
+      type: DataTypes.UUID, // Matches User's id type
+      allowNull: false,
+    },
   });
 
   Event.associate = (models) => {

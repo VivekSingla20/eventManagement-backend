@@ -6,14 +6,28 @@ module.exports = {
         primaryKey: true,
         autoIncrement: true,
       },
-      amount: Sequelize.FLOAT,
+      amount: {
+        type: Sequelize.FLOAT,
+        allowNull: false,
+      },
       description: Sequelize.STRING,
       event_id: {
         type: Sequelize.INTEGER,
+        allowNull: false,
         references: { model: "Events", key: "event_id" },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
-      createdAt: Sequelize.DATE,
-      updatedAt: Sequelize.DATE,
+      createdAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      updatedAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
     });
   },
   down: async (queryInterface) => {
