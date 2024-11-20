@@ -1,51 +1,45 @@
-const { Event, Ticket, AuditLog } = require("../models");
-const { sendEmail } = require("../utils/email");
+const db = require("../models");
 
-// Create Event
 exports.createEvent = async (req, res) => {
-  const { name, date, venue, capacity, budget, organizerId } = req.body;
   try {
-    const event = await Event.create({ name, date, venue, capacity, budget, organizerId });
+    const { name, description, event_date, capacity, location } = req.body;
 
-    // Log event creation
-    await AuditLog.create({
-      action: "CREATE",
-      description: `Event '${event.name}' created by user ID: ${organizerId}`,
+    const newEvent = await db.Event.create({
+      name,
+      description,
+      event_date,
+      capacity,
+      location,
+      created_by: req.userId,
     });
 
-    // Send notification email
-    await sendEmail(event.organizer.email, "Event Created", `Your event '${event.name}' has been created successfully.`);
-
-    res.status(201).json({ message: "Event created successfully", event });
+    res
+      .status(201)
+      .json({ message: "Event created successfully", event: newEvent });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to create event", details: error.message });
   }
 };
 
-// Join Event
-exports.joinEvent = async (req, res) => {
-  const { userId, eventId } = req.body;
+exports.getEventDetails = async (req, res) => {
   try {
-    const event = await Event.findByPk(eventId);
+    const { eventId } = req.params;
+
+    const event = await db.Event.findOne({
+      where: { event_id: eventId },
+      include: [
+        { model: db.User, attributes: ["first_name", "last_name", "email"] },
+      ],
+    });
 
     if (!event) return res.status(404).json({ error: "Event not found" });
 
-    const ticketCount = await Ticket.count({ where: { eventId } });
-    if (ticketCount >= event.capacity) return res.status(400).json({ error: "Event is fully booked" });
-
-    const ticket = await Ticket.create({ userId, eventId });
-    res.status(201).json({ message: "Successfully joined the event", ticket });
+    res.status(200).json({ event });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Fetch Events
-exports.fetchEvents = async (req, res) => {
-  try {
-    const events = await Event.findAll();
-    res.status(200).json(events);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch event details", details: error.message });
   }
 };

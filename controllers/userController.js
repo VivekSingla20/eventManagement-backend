@@ -1,32 +1,56 @@
 const { User } = require("../models");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const { sendOtpEmail } = require("../utils/EmailService");
+const crypto = require("crypto");
 
-// User Registration
-exports.registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+// Function to generate OTP
+const generateOtp = () => Math.floor(100000 + Math.random() * 900000);
+
+exports.sendOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required" });
+
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword, role });
-    res.status(201).json({ message: "User registered successfully", user });
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Generate OTP
+    const otp = generateOtp();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // Expires in 10 minutes
+
+    // Update user with OTP and expiration
+    await user.update({ otp, otpExpires });
+
+    // Send OTP via email
+    await sendOtpEmail(email, otp);
+
+    res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ message: "Error sending OTP" });
   }
 };
 
-// User Login
-exports.loginUser = async (req, res) => {
-  const { email, password } = req.body;
+exports.verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
+
   try {
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
+    // Check OTP and expiration
+    if (user.otp !== otp || new Date() > new Date(user.otpExpires)) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    res.status(200).json({ message: "Login successful", token });
+    // Clear OTP fields after successful verification
+    await user.update({ otp: null, otpExpires: null });
+
+    res.status(200).json({ message: "OTP verified successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ message: "Error verifying OTP" });
   }
 };

@@ -1,13 +1,17 @@
 const express = require("express");
-const eventController = require("../controllers/eventController");
+const expenseController = require("../controllers/expenseController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
 
-router.post("/create", authMiddleware.verifyToken, eventController.createEvent);
+router.post(
+  "/:eventId",
+  authMiddleware.verifyToken,
+  expenseController.addExpense
+);
 router.get(
   "/:eventId",
   authMiddleware.verifyToken,
-  eventController.getEventDetails
+  expenseController.getExpensesByEvent
 );
 
 module.exports = router;

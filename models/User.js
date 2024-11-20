@@ -1,12 +1,52 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../utils/db");
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define(
+    "User",
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
+      firstName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      lastName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      otp: {
+        type: DataTypes.STRING,
+        allowNull: true, // OTP can be null until issued
+      },
+      otpExpires: {
+        type: DataTypes.DATE,
+        allowNull: true, // Stores OTP expiration timestamp
+      },
+    },
+    {
+      tableName: "users",
+      timestamps: true,
+    }
+  );
 
-const User = sequelize.define("User", {
-  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  name: { type: DataTypes.STRING, allowNull: false },
-  email: { type: DataTypes.STRING, unique: true, allowNull: false },
-  password: { type: DataTypes.STRING, allowNull: false },
-  role: { type: DataTypes.ENUM("admin", "organizer", "participant"), defaultValue: "participant" },
-});
+  // Define relationships
+  User.associate = (models) => {
+    // One user can create many events
+    User.hasMany(models.Event, {
+      foreignKey: "created_by", // Foreign key in Event table
+      as: "createdEvents",
+    });
+  };
 
-module.exports = User;
+  return User;
+};
