@@ -7,6 +7,7 @@ const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const logRoutes = require("./routes/logRoutes");
+const userRoutes = require("./routes/userRoutes")
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,7 @@ app.use("/auth", authRoutes);
 app.use("/events", eventRoutes);
 app.use("/expenses", expenseRoutes);
 app.use("/logs", logRoutes);
+app.use("/otp", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 
